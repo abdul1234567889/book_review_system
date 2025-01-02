@@ -1,5 +1,4 @@
-from flask import render_template, current_app
-from flask_socketio import SocketIO, emit
+from flask import render_template, current_app, jsonify, request
 from app.faq import bp
 from flask_login import current_user
 import re
@@ -239,30 +238,23 @@ def generate_contextual_response(question, intent, category):
 
 @bp.route('/faq')
 def faq():
-    return render_template('faq/index.html', faqs=FAQS)
+    return render_template('faq/index.html')
 
-def handle_connect():
-    """Handle Socket.IO connection"""
-    emit('connected', {'data': 'Connected to FAQ support. Ask me anything about the Book Review System!'})
-
-def handle_question(data):
-    """Handle FAQ questions with improved response generation"""
-    question = data.get('question', '').strip()
+@bp.route('/ask', methods=['POST'])
+def ask_question():
+    data = request.get_json()
+    question = data.get('question', '')
     
-    if not question:
-        response = "Please ask a question about the Book Review System. I'm here to help!"
-    else:
-        response = find_best_answer(question)
+    # Find the best category for the question
+    category = find_best_category(question)
     
-    emit('answer', {'response': response})
-
-def init_socketio(app):
-    """Initialize Socket.IO with the app"""
-    socketio = SocketIO()
-    socketio.init_app(app)
+    # Get the intent of the question
+    intent = get_question_intent(question)
     
-    # Register Socket.IO event handlers
-    socketio.on_event('connect', handle_connect)
-    socketio.on_event('ask_question', handle_question)
+    # Find the best answer
+    answer = find_best_answer(question, category)
     
-    return socketio
+    if not answer:
+        answer = generate_contextual_response(question, intent, category)
+    
+    return jsonify({'answer': answer})
