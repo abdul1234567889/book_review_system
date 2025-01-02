@@ -127,23 +127,30 @@
         const question = questionInput.value.trim();
         
         if (!question) return;
-        
+
+        // Display user message
         appendMessage(question, 'user');
         questionInput.value = '';
-        
+
         try {
-            const response = await fetch('/ask', {
+            const response = await fetch('/faq/ask', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ question: question })
             });
-            
+
             const data = await response.json();
-            appendMessage(data.answer, 'bot');
+            
+            if (response.ok) {
+                appendMessage(data.answer, 'bot');
+            } else {
+                appendMessage('Sorry, I encountered an error processing your question.', 'bot');
+            }
         } catch (error) {
-            appendMessage('Sorry, there was an error processing your question. Please try again.', 'bot');
+            console.error('Error:', error);
+            appendMessage('Sorry, there was an error communicating with the server.', 'bot');
         }
     });
 </script>

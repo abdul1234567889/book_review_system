@@ -242,19 +242,15 @@ def faq():
 
 @bp.route('/ask', methods=['POST'])
 def ask_question():
-    data = request.get_json()
-    question = data.get('question', '')
-    
-    # Find the best category for the question
-    category = find_best_category(question)
-    
-    # Get the intent of the question
-    intent = get_question_intent(question)
+    question = request.json.get('question', '')
+    if not question:
+        return jsonify({'error': 'No question provided'}), 400
     
     # Find the best answer
-    answer = find_best_answer(question, category)
+    answer = find_best_answer(question)
     
-    if not answer:
-        answer = generate_contextual_response(question, intent, category)
-    
-    return jsonify({'answer': answer})
+    # Return the response
+    return jsonify({
+        'answer': answer,
+        'status': 'success'
+    })
