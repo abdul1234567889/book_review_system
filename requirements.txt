@@ -1,0 +1,15 @@
+Flask==2.3.3
+Flask-SQLAlchemy==3.1.1
+Flask-Login==0.6.2
+Flask-Migrate==4.0.5
+Flask-SocketIO==5.3.6
+mysqlclient==2.2.4
+WTForms==3.0.1
+python-dotenv==1.0.0
+python-pptx==0.6.21
+pytest==7.4.3
+pytest-cov==4.1.0
+eventlet==0.35.2
+gunicorn==21.2.0
+Flask-WTF==1.2.1
+pymysql==1.1.0

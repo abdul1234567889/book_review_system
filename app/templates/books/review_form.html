@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Write Review{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h1 class="display-4 mb-4">Review "{{ book.title }}"</h1>
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">{{ book.title }}</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">by {{ book.author }}</h6>
+                </div>
+            </div>
+            <form method="POST" action="">
+                {{ form.hidden_tag() }}
+                <div class="mb-3">
+                    {{ form.rating.label(class="form-label") }}
+                    {{ form.rating(class="form-control", min="1", max="5", step="0.5") }}
+                    {% for error in form.rating.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                    <small class="form-text text-muted">Rate from 1 to 5 stars (0.5 increments allowed)</small>
+                </div>
+                <div class="mb-3">
+                    {{ form.content.label(class="form-label") }}
+                    {{ form.content(class="form-control", rows="5") }}
+                    {% for error in form.content.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                    <small class="form-text text-muted">Minimum 10 characters</small>
+                </div>
+                <div class="mb-3">
+                    {{ form.submit(class="btn btn-primary") }}
+                    <a href="{{ url_for('books.book_detail', book_id=book.id) }}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

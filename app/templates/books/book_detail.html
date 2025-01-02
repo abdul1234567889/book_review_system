@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}{{ book.title }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('books.book_list') }}">Books</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ book.title }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h1 class="card-title display-4">{{ book.title }}</h1>
+                    <h3 class="card-subtitle mb-3 text-muted">by {{ book.author }}</h3>
+                    <p class="card-text">
+                        <strong>Genre:</strong> {{ book.genre|title }}<br>
+                        <strong>ISBN:</strong> {{ book.isbn or 'Not available' }}<br>
+                        <strong>Publication Date:</strong> {{ book.publication_date.strftime('%B %d, %Y') if book.publication_date else 'Not available' }}
+                    </p>
+                    {% if book.description %}
+                    <p class="card-text">{{ book.description }}</p>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <a href="{{ url_for('books.add_review', book_id=book.id) }}" class="btn btn-primary">Write Review</a>
+                </div>
+            </div>
+
+            <h2 class="mb-4">Reviews</h2>
+            {% for review in reviews %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="card-title mb-0">
+                            <span class="text-warning">★</span> {{ "%.1f"|format(review.rating) }}
+                        </h5>
+                        <small class="text-muted">{{ review.created_at.strftime('%Y-%m-%d') }}</small>
+                    </div>
+                    <p class="card-text">{{ review.content }}</p>
+                    <footer class="blockquote-footer">
+                        Review by {{ review.user.username }}
+                    </footer>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                No reviews yet. Be the first to review this book!
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Book Stats</h5>
+                    <p class="card-text">
+                        <strong>Average Rating:</strong>
+                        {% if reviews %}
+                        {{ "%.1f"|format(reviews|map(attribute='rating')|sum / reviews|length) }}
+                        {% else %}
+                        No ratings yet
+                        {% endif %}
+                        <br>
+                        <strong>Total Reviews:</strong> {{ reviews|length }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

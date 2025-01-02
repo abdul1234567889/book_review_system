@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Reading Lists{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-4">My Reading Lists</h1>
+        </div>
+        <div class="col-auto">
+            <a href="#" class="btn btn-primary mt-3">Create New List</a>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for list in lists %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{{ list.name }}</h5>
+                    <p class="card-text">
+                        <small class="text-muted">{{ list.books|length }} books</small><br>
+                        <small class="text-muted">Created: {{ list.created_at.strftime('%Y-%m-%d') }}</small>
+                    </p>
+                </div>
+                <div class="card-footer">
+                    <a href="#" class="btn btn-primary btn-sm">View Books</a>
+                    <a href="#" class="btn btn-outline-danger btn-sm">Delete List</a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col">
+            <div class="alert alert-info">
+                You haven't created any reading lists yet.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

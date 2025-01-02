@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+
+{% block title %}Threading Demo{% endblock %}
+
+{% block styles %}
+<style>
+.demo-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.demo-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.progress-bar {
+    transition: width 0.5s ease-in-out;
+}
+.stats-container {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+}
+.stats-container.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+.comparison-arrow {
+    font-size: 2rem;
+    color: #28a745;
+}
+.stat-card {
+    border-radius: 15px;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+.processing-animation {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4 text-center">Threading Demo</h1>
+    <p class="lead text-center mb-3">
+        This demo showcases the power of multi-threading by processing book data in parallel.
+        Compare sequential vs threaded processing times and see the performance difference!
+    </p>
+    
+    <!-- Add Sample Books Button -->
+    <div class="text-center mb-5">
+        <a href="{{ url_for('threading_demo.add_sample_books') }}" class="btn btn-outline-primary">
+            <i class="fas fa-plus"></i> Add Sample Books
+        </a>
+        <small class="d-block text-muted mt-2">Add sample books to see a more dramatic difference in processing times</small>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-md-4">
+            <div class="card demo-card h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Sequential Processing</h5>
+                    <p class="card-text">Process all books in a single thread</p>
+                    <button class="btn btn-primary" onclick="runSequential()">
+                        Run Sequential
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card demo-card h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Threaded Processing</h5>
+                    <p class="card-text">Process books using multiple threads</p>
+                    <button class="btn btn-success" onclick="runThreaded()">
+                        Run Threaded
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card demo-card h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Compare Both</h5>
+                    <p class="card-text">Run both methods and compare results</p>
+                    <button class="btn btn-info" onclick="runComparison()">
+                        Run Comparison
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Processing Animation -->
+    <div id="processingAnimation" class="text-center mb-4" style="display: none;">
+        <div class="processing-animation mx-auto"></div>
+        <p class="mt-2">Processing...</p>
+    </div>
+
+    <!-- Results Section -->
+    <div id="resultsContainer" class="stats-container">
+        <!-- Sequential Results -->
+        <div id="sequentialResults" style="display: none;">
+            <h3 class="mb-4 text-center">Sequential Processing Results</h3>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card stat-card mb-3">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Processing Time</h5>
+                            <p class="stat-value" id="seqTime">-</p>
+                            <p class="text-muted">seconds</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card stat-card mb-3">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Total Words</h5>
+                            <p class="stat-value" id="seqWords">-</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card stat-card mb-3">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Avg Title Length</h5>
+                            <p class="stat-value" id="seqTitleLen">-</p>
+                            <p class="text-muted">characters</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Threaded Results -->
+        <div id="threadedResults" style="display: none;">
+            <h3 class="mb-4 text-center">Threaded Processing Results</h3>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card stat-card mb-3">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Processing Time</h5>
+                            <p class="stat-value" id="threadTime">-</p>
+                            <p class="text-muted">seconds</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card stat-card mb-3">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Total Words</h5>
+                            <p class="stat-value" id="threadWords">-</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card stat-card mb-3">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Avg Title Length</h5>
+                            <p class="stat-value" id="threadTitleLen">-</p>
+                            <p class="text-muted">characters</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comparison Results -->
+        <div id="comparisonResults" style="display: none;">
+            <h3 class="mb-4 text-center">Performance Comparison</h3>
+            <div class="card stat-card">
+                <div class="card-body text-center">
+                    <h4 class="mb-3">Speedup Factor</h4>
+                    <p class="display-4" id="speedupFactor">-</p>
+                    <p class="text-muted">times faster with threading</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showProcessing() {
+    document.getElementById('processingAnimation').style.display = 'block';
+    document.getElementById('resultsContainer').style.opacity = '0';
+    document.getElementById('resultsContainer').style.transform = 'translateY(20px)';
+}
+
+function hideProcessing() {
+    document.getElementById('processingAnimation').style.display = 'none';
+    document.getElementById('resultsContainer').style.opacity = '1';
+    document.getElementById('resultsContainer').style.transform = 'translateY(0)';
+}
+
+function formatNumber(num) {
+    return num.toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+
+async function runSequential() {
+    showProcessing();
+    document.getElementById('sequentialResults').style.display = 'block';
+    document.getElementById('threadedResults').style.display = 'none';
+    document.getElementById('comparisonResults').style.display = 'none';
+    
+    try {
+        const response = await fetch('/threading_demo/process/sequential');
+        const data = await response.json();
+        
+        document.getElementById('seqTime').textContent = formatNumber(data.processing_time);
+        document.getElementById('seqWords').textContent = formatNumber(data.total_words);
+        document.getElementById('seqTitleLen').textContent = formatNumber(data.avg_title_length);
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while processing');
+    }
+    
+    hideProcessing();
+}
+
+async function runThreaded() {
+    showProcessing();
+    document.getElementById('sequentialResults').style.display = 'none';
+    document.getElementById('threadedResults').style.display = 'block';
+    document.getElementById('comparisonResults').style.display = 'none';
+    
+    try {
+        const response = await fetch('/threading_demo/process/threaded');
+        const data = await response.json();
+        
+        document.getElementById('threadTime').textContent = formatNumber(data.processing_time);
+        document.getElementById('threadWords').textContent = formatNumber(data.total_words);
+        document.getElementById('threadTitleLen').textContent = formatNumber(data.avg_title_length);
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while processing');
+    }
+    
+    hideProcessing();
+}
+
+async function runComparison() {
+    showProcessing();
+    document.getElementById('sequentialResults').style.display = 'block';
+    document.getElementById('threadedResults').style.display = 'block';
+    document.getElementById('comparisonResults').style.display = 'block';
+    
+    try {
+        const response = await fetch('/threading_demo/process/both');
+        const data = await response.json();
+        
+        // Sequential results
+        document.getElementById('seqTime').textContent = formatNumber(data.sequential.processing_time);
+        document.getElementById('seqWords').textContent = formatNumber(data.sequential.total_words);
+        document.getElementById('seqTitleLen').textContent = formatNumber(data.sequential.avg_title_length);
+        
+        // Threaded results
+        document.getElementById('threadTime').textContent = formatNumber(data.threaded.processing_time);
+        document.getElementById('threadWords').textContent = formatNumber(data.threaded.total_words);
+        document.getElementById('threadTitleLen').textContent = formatNumber(data.threaded.avg_title_length);
+        
+        // Speedup factor
+        document.getElementById('speedupFactor').textContent = formatNumber(data.speedup);
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while processing');
+    }
+    
+    hideProcessing();
+}
+</script>
+{% endblock %}

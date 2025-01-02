@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}My Reading Lists{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>My Reading Lists</h1>
+        <a href="{{ url_for('reading_lists.create') }}" class="btn btn-primary btn-lg">Create New List</a>
+    </div>
+
+    {% if reading_lists %}
+        <div class="row">
+            {% for reading_list in reading_lists %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ reading_list.name }}</h5>
+                            <p class="card-text">
+                                <small class="text-muted">Created on {{ reading_list.created_at.strftime('%Y-%m-%d') }}</small>
+                            </p>
+                            <p class="card-text">{{ reading_list.books|length }} books</p>
+                            <a href="{{ url_for('reading_lists.view', id=reading_list.id) }}" class="btn btn-outline-primary">View List</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            You haven't created any reading lists yet.
+        </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add click event listener to the Create New List button
+    const createButton = document.querySelector('a[href="{{ url_for('reading_lists.create') }}"]');
+    if (createButton) {
+        createButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = "{{ url_for('reading_lists.create') }}";
+        });
+    }
+});
+</script>
+{% endblock %}

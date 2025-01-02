@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}{{ reading_list.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>{{ reading_list.name }}</h1>
+                <a href="{{ url_for('reading_lists.edit', id=reading_list.id) }}" class="btn btn-outline-primary">
+                    <i class="fas fa-edit"></i> Edit List
+                </a>
+            </div>
+
+            <h3 class="mb-3">Books in this List</h3>
+            {% if reading_list.books %}
+                <div class="row">
+                    {% for book in reading_list.books %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ book.title }}</h5>
+                                    <h6 class="card-subtitle mb-2 text-muted">by {{ book.author }}</h6>
+                                    {% if book.description %}
+                                        <p class="card-text">{{ book.description[:150] }}...</p>
+                                    {% endif %}
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <a href="{{ url_for('books.book_detail', book_id=book.id) }}" class="btn btn-outline-primary btn-sm">View Book</a>
+                                        <form class="d-inline remove-book-form" data-book-id="{{ book.id }}">
+                                            {{ form.hidden_tag() }}
+                                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                <i class="fas fa-times"></i> Remove
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted">No books in this list yet.</p>
+            {% endif %}
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Add Books</h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <input type="text" id="bookSearch" class="form-control" placeholder="Search books...">
+                    </div>
+                    <div class="list-group" id="availableBooks">
+                        {% for book in available_books %}
+                            {% if book not in reading_list.books %}
+                                <form class="add-book-form" data-book-id="{{ book.id }}">
+                                    {{ form.hidden_tag() }}
+                                    <button type="submit" class="list-group-item list-group-item-action text-start w-100">
+                                        <h6 class="mb-1">{{ book.title }}</h6>
+                                        <small class="text-muted">by {{ book.author }}</small>
+                                    </button>
+                                </form>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Book search functionality
+    const searchInput = document.getElementById('bookSearch');
+    const booksList = document.getElementById('availableBooks');
+    
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const books = booksList.getElementsByClassName('add-book-form');
+        
+        Array.from(books).forEach(form => {
+            const title = form.querySelector('h6').textContent.toLowerCase();
+            const author = form.querySelector('small').textContent.toLowerCase();
+            const matches = title.includes(searchTerm) || author.includes(searchTerm);
+            form.style.display = matches ? '' : 'none';
+        });
+    });
+
+    // Add book functionality
+    document.querySelectorAll('.add-book-form').forEach(form => {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const bookId = this.dataset.bookId;
+            const csrfToken = this.querySelector('input[name="csrf_token"]').value;
+
+            try {
+                const response = await fetch(`{{ url_for('reading_lists.add_book', id=reading_list.id, book_id=0) }}`.replace('0', bookId), {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while adding the book.');
+            }
+        });
+    });
+
+    // Remove book functionality
+    document.querySelectorAll('.remove-book-form').forEach(form => {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const bookId = this.dataset.bookId;
+            const csrfToken = this.querySelector('input[name="csrf_token"]').value;
+
+            if (confirm('Are you sure you want to remove this book from the list?')) {
+                try {
+                    const response = await fetch(`{{ url_for('reading_lists.remove_book', id=reading_list.id, book_id=0) }}`.replace('0', bookId), {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrfToken,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert(data.message);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('An error occurred while removing the book.');
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
